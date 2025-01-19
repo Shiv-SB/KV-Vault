@@ -21,8 +21,7 @@ class Vault implements Vault_Interface{
     private database: Database;
 
     constructor(vaultID: string) {
-        //this.database = new Database(":memory:");
-        this.database = new Database("database.SQLite", {
+        this.database = new Database(":memory:", {
             safeIntegers: true,
         });
         this.database.exec("PRAGMA journal_mode = WAL;");
