@@ -1,6 +1,17 @@
 import { randomUUIDv7 } from "bun";
 import { Database, Statement } from "bun:sqlite";
 
+interface Record_Vault {
+    id: string;
+    key: string;
+    value: string;
+}
+
+interface Record_idSet {
+    id: string;
+    createdAt: BigInt;
+}
+
 interface Vault_Interface {
 
 }
@@ -14,30 +25,34 @@ class Vault implements Vault_Interface{
         this.database = new Database("database.SQLite", {
             safeIntegers: true,
         });
-        this.createTable();
+        this.database.exec("PRAGMA journal_mode = WAL;");
+        this.createTables();
     }
 
-    private createTable() {
-        const createVault: Statement = this.database.query(`
-                CREATE TABLE IF NOT EXISTS vault(
-                    id TEXT PRIMARY KEY,
-                    key TEXT,
-                    value TEXT
-                )
-            `);
-
+    private createTables() {
         const createIdSet: Statement = this.database.query(`
-                CREATE TABLE IF NOT EXISTS idSet(
-                    id TEXT PRIMARY KEY,
-                    createdAt INTEGER
-                )
-            `);
-
-        createVault.run();
+            CREATE TABLE IF NOT EXISTS idSet (
+                id TEXT PRIMARY KEY,
+                createdAt INTEGER
+            )
+        `);
+    
+        const createVault: Statement = this.database.query(`
+            CREATE TABLE IF NOT EXISTS vault (
+                id TEXT PRIMARY KEY,
+                key TEXT,
+                value TEXT
+            )
+        `);
+    
         createIdSet.run();
+        createVault.run();
+    
+        createIdSet.finalize();
+        createVault.finalize();
     }
 
-    public set(key: string, value: string) {
+    public set(key: string, value: string): string {
 
         if (typeof key !== "string" || typeof value !== "string") {
             throw new Error(`Key and value must be strings`);
@@ -63,12 +78,52 @@ class Vault implements Vault_Interface{
         
     }
 
-    public get(key: string) {
-
+    private getFromSet(id: string): Record_idSet | undefined {
+        const query: Statement = this.database.query(`SELECT * FROM idSet`);
+        for (const row of query.iterate()) {
+            const typedRow = row as Record_idSet | undefined;
+            if (typedRow && typedRow.id === id) {
+                return typedRow;
+            }
+        }
     }
 
+    public get(id: string, key: string): Record_Vault | undefined {
+
+        if (typeof key !== "string" || typeof id !== "string") {
+            throw new Error(`ID and key must be strings`);
+        }  
+
+        const query: Statement = this.database.query(`SELECT * FROM vault`);
+        for (const row of query.iterate()) {
+            const typedRow = row as Record_Vault | undefined;
+            if (typedRow && typedRow.id === id && typedRow.key === key) {
+                return typedRow;
+            }
+        }
+    }
+
+    public keyProperties(id: string) {
+        return this.getFromSet(id);
+    }
+
+    /**
+     * Parse a BigInt unix date to JS Date object.
+     * @param unixDate 
+     * @returns 
+     */
+    public parseDate(unixDate: BigInt) {
+        return new Date(Number(unixDate));
+    }
 }
 
 const foo = new Vault("VAULT_1");
 
-foo.set("foo", "bar");
+const ID = foo.set("foo", new Date().toISOString());
+
+console.log("success", foo.get(ID, "foo")); // Should return record
+console.log("fail:", foo.get("baz", "bar")); // Should return undefined
+
+const props = foo.keyProperties(ID);
+
+console.log("Date:", foo.parseDate(props?.createdAt!));
