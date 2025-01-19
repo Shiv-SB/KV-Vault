@@ -13,7 +13,10 @@ interface Record_idSet {
 }
 
 interface Vault_Interface {
-
+    set(key: string, value: string): string;
+    get(id: string, key: string): Record_Vault | undefined;
+    keyProperties(id: string): Record_idSet | undefined;
+    parseDate(unixDate: BigInt): Date
 }
 
 class Vault implements Vault_Interface{
@@ -102,7 +105,7 @@ class Vault implements Vault_Interface{
         }
     }
 
-    public keyProperties(id: string) {
+    public keyProperties(id: string): Record_idSet | undefined {
         return this.getFromSet(id);
     }
 
