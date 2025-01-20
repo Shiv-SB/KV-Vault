@@ -60,7 +60,7 @@ class Vault implements Vault_Interface{
             throw new Error(`Key and value must be strings`);
         }    
 
-        const recordID = randomUUIDv7();
+        const recordID = randomUUIDv7("base64");
 
         const uploadToVault = this.database.query(`INSERT INTO vault (id, key, value) VALUES ($id, $key, $value)`);
         uploadToVault.run({
@@ -74,8 +74,6 @@ class Vault implements Vault_Interface{
             $id: recordID,
             $createdAt: BigInt(Date.now()),
         });
-
-        console.log(recordID);
         return recordID;
         
     }
@@ -119,7 +117,7 @@ class Vault implements Vault_Interface{
     }
 }
 
-const foo = new Vault("VAULT_1");
+/*const foo = new Vault("VAULT_1");
 
 const ID = foo.set("foo", new Date().toISOString());
 
@@ -128,4 +126,19 @@ console.log("fail:", foo.get("baz", "bar")); // Should return undefined
 
 const props = foo.keyProperties(ID);
 
-console.log("Date:", foo.parseDate(props?.createdAt!));
+console.log("Date:", foo.parseDate(props?.createdAt!));*/
+
+//--------------
+
+/*const limit = 100_000;
+
+const vault = new Vault("TEST");
+const set = new Set();
+
+for (let i = 0; i < limit; i++) {
+    const ID = vault.set(crypto.randomUUID(), new Date().toDateString());
+    const props = vault.keyProperties(ID);
+    set.add(vault.parseDate(props?.createdAt!));
+}
+
+console.log(set.size);*/
