@@ -12,6 +12,10 @@ interface Record_idSet {
     createdAt: BigInt;
 }
 
+interface Vault_Options {
+    storageType: "memory" | "disk";
+}
+
 interface Vault_Interface {
     set(key: string, value: string): string;
     get(id: string, key: string): Record_Vault | undefined;
@@ -23,8 +27,15 @@ class Vault implements Vault_Interface{
     
     private database: Database;
 
-    constructor(vaultID: string) {
-        this.database = new Database(":memory:", {
+    constructor(vaultID: string, options?: Vault_Options) {
+
+        const {
+            storageType = "memory"
+        } = options || {};
+
+        const databaseName = storageType === "memory" ? ":memory" : vaultID;
+
+        this.database = new Database(databaseName, {
             safeIntegers: true,
         });
         this.database.exec("PRAGMA journal_mode = WAL;");

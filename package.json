@@ -2,6 +2,9 @@
   "name": "kv-vault",
   "module": "cluster.ts",
   "type": "module",
+  "scripts": {
+    "dev:hot": "bun --hot src/server.ts"
+  },
   "devDependencies": {
     "@types/bun": "latest"
   },

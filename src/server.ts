@@ -1,13 +1,14 @@
 import { serve } from "bun";
 
-interface WsData {
+type WebSocketData = {
     createdAt: number;
     ID: string;
+    url: URL;
 }
 
-const websocketSessions = new Map<string, WsData>();
+const websocketSessions = new Map<string, WebSocketData>();
 
-const server = serve<WsData>({
+const server = serve<WebSocketData>({
     port: 8080,
     
     async fetch(req, server) {
@@ -15,6 +16,7 @@ const server = serve<WsData>({
             data: {
                 createdAt: Date.now(),
                 ID: crypto.randomUUID(),
+                url: new URL(req.url),
             }
         });
         if (success) {
@@ -35,7 +37,13 @@ const server = serve<WsData>({
             websocketSessions.delete(ws.data.ID);
         },
         async message(ws, message) {
-            console.log(`Recieved "${message}"`);
+            const recievedMessage: string | Buffer = message;
+            //console.log("Recieved Type:", recievedMessage instanceof Buffer ? "Buffer" : typeof recievedMessage);
+            if (message instanceof Buffer) {
+                console.log("buff to string:", recievedMessage.toString());
+                console.log("url:", ws.data.url.toString());
+            }
+            //console.log(`Recieved "${message instanceof Buffer}"`);
             ws.send(`You said "${message}"`);
             
         },
@@ -44,7 +52,3 @@ const server = serve<WsData>({
 });
 
 console.log(`Listening on ${server.hostname}:${server.port}`);
-
-setInterval(() => {
-    console.log("Total connections:", websocketSessions.size);
-}, 5000);
